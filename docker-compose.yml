@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. 神经中枢：Redis 消息队列
+  redis:
+    image: redis:7.2-alpine
+    container_name: jarvis-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - jarvis-network
+    restart: always
+
+  # 2. 调度大脑：Spring Boot
+  orchestrator:
+    build: 
+      context: ./orchestrator
+    container_name: jarvis-orchestrator
+    ports:
+      - "8080:8080"
+    environment:
+      # 在 Docker 网络内，直接用服务名 'redis' 进行通信
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    depends_on:
+      - redis
+    networks:
+      - jarvis-network
+    restart: always
+
+  # 3. 物理执行端：Python + Playwright + Ollama
+  python-worker:
+    build: 
+      context: ./worker
+    container_name: jarvis-worker
+    environment:
+      # 同样使用服务名 'redis' 连接
+      - REDIS_URL=redis://redis:6379/0
+      - HEADLESS=True
+    depends_on:
+      - redis
+    networks:
+      - jarvis-network
+    restart: always
+
+volumes:
+  redis_data:
+
+networks:
+  jarvis-network:
+    driver: bridge
