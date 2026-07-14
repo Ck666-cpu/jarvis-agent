@@ -1,0 +1,21 @@
+# Java & Spring Boot
+orchestrator/target/
+*.class
+*.jar
+*.war
+
+# Python & Celery
+worker/venv/
+__pycache__/
+*.py[cod]
+*.so
+celerybeat-schedule
+celerybeat.pid
+
+# IDEs (IntelliJ, PyCharm, VS Code)
+.idea/
+.vscode/
+*.iml
+
+# Environment Variables (如果以后有敏感的 API Key)
+.env
