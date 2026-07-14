@@ -17,15 +17,15 @@ public class JobPublisherService {
     // ... 具体的定时方法写在下面 ...
     // @Scheduled 表示这是一个定时任务
     // fixedRate = 30000 意味着每隔 30000 毫秒（30秒），这个方法就会自动执行一次
-    @Scheduled(fixedRate = 30000)
-    public void publishJob() {
+//    @Scheduled(fixedRate = 30000)
+    public void publishJob(String targetUrl) throws Exception {
         try {
             // [阶段 A：构建任务内核]
             // 定义我们要调用 Python 的哪个函数，以及传什么参数
             Map<String, Object> taskCore = new HashMap<>();
             taskCore.put("task", "tasks.scrape_website"); // 对应 Python 代码里的 @app.task(name=...)
             taskCore.put("id", UUID.randomUUID().toString()); // 生成一个唯一的任务追踪 ID
-            taskCore.put("args", Collections.singletonList("https://genius.com/Kitschkrieg-blumengarten-and-shirin-david-gut-genug-lyrics")); // 传给 Python 的网址参数
+            taskCore.put("args", Collections.singletonList(targetUrl)); // 传给 Python 的网址参数
             taskCore.put("kwargs", new HashMap<>());
 
             // 将任务内核转换为 JSON，然后进行 Base64 编码
@@ -57,7 +57,7 @@ public class JobPublisherService {
             // leftPush 意味着从左边把任务塞进列表，Python Worker 会在右边 (rightPop) 把它取走
             redisTemplate.opsForList().leftPush("celery", finalPayload);
 
-            System.out.println("[中枢] 任务已成功推送到 Redis 队列 -> 目标: GitHub");
+            System.out.println("[中枢] 收到 API 请求，任务已推送至Redis队列 -> 目标: " + targetUrl);
 
         } catch (Exception e) {
             System.err.println("发布任务时发生错误: " + e.getMessage());
