@@ -3,8 +3,8 @@ FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
 
 # 复制 pom.xml 和源码
-COPY pom.xml .
-COPY src ./src
+COPY demo/pom.xml .
+COPY demo/src ./src
 
 # 打包并跳过测试以加快构建速度
 RUN mvn clean package -DskipTests
