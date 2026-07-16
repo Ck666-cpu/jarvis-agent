@@ -1,0 +1,29 @@
+name: Jarvis Agent CD
+
+# 触发条件：只有当代码 push 到 main 分支时才执行
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    # 指派给我们刚刚在本地跑起来的 Runner
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy with Docker Compose
+        run: |
+          echo "开始构建并更新 Jarvis 容器..."
+          
+          # --build 强制重新构建镜像以应用最新代码
+          # -d 后台静默启动，平滑替换旧容器
+          docker-compose up -d --build
+          
+          # 清理无用的悬空镜像，防止把宿主机磁盘撑爆
+          docker image prune -f
+          
+          echo "✅ Jarvis 系统已成功更新并上线！"
