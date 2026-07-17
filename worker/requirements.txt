@@ -1,3 +1,9 @@
 celery==5.4.0
 redis==5.0.1
 playwright==1.49.0
+# worker/requirements.txt 需要新增的内容
+fastapi
+uvicorn
+llama-index-core
+llama-index-llms-ollama
+llama-index-embeddings-huggingface
