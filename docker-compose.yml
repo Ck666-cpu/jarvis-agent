@@ -35,6 +35,8 @@ services:
     build: 
       context: ./worker
     container_name: jarvis-worker
+    ports:
+      - "8000:8000"  # 新增这一行
     environment:
       # 同样使用服务名 'redis' 连接
       - REDIS_URL=redis://redis:6379/0
