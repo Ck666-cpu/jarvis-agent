@@ -1,10 +1,10 @@
 import asyncio
-import os
+ import os
 import json
 import random
 from pathlib import Path
 from playwright.async_api import async_playwright, Page, BrowserContext
-from playwright_stealth import Stealth
+from playwright_stealth import stealth_async
 
 # ---------------------------------------------------------------------------
 # Config
@@ -182,10 +182,8 @@ async def automate_mudah_post(
         )
 
         # Apply stealth — use async variant for async_playwright
-        stealth = Stealth()
-        await stealth.apply_stealth_async(context)
-
         page = await context.new_page()
+        await stealth_async(page)
 
         try:
             # ===== 1. SESSION RESTORE / LOGIN =====
