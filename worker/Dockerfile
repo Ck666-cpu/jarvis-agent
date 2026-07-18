@@ -1,5 +1,5 @@
 # 示例：Python Worker 的基础 Dockerfile
-FROM python:3.10-slim
+FROM python:3.10-slim-bookworm
 
 WORKDIR /app
 
