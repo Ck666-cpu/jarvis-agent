@@ -6,9 +6,10 @@ WORKDIR /app
 # 复制依赖清单并安装
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN playwright install --with-deps chromium
 
 # 复制所有源代码
-COPY . .
+COPY mudah_automator.py .
 
 # 启动命令 (假设你的主程序叫 main.py)
 CMD ["python", "main.py"]

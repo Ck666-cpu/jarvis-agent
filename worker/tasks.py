@@ -3,10 +3,14 @@ import ollama
 from celery import Celery
 from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
+import json
+from llama_index.llms.ollama import Ollama
+from mudah_automator import automate_mudah_post
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 app = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
-
+# 初始化本地大模型引擎
+llm = Ollama(model="llama3", request_timeout=120.0, base_url="http://host.docker.internal:11434")
 
 @app.task(name="tasks.scrape_website")
 def scrape_website(url: str):
@@ -87,3 +91,66 @@ def scrape_website(url: str):
             return {"status": "failed", "error": str(e)}
         finally:
             browser.close()
+
+@app.task(name="tasks.automate_mudah_post")
+def process_telegram_message(raw_text: str, image_paths: list):
+    """
+    接收原始文本和图片路径，利用 LLM 清洗数据，并触发自动化发布
+    """
+    print(f"========== 开始处理任务 ==========")
+    print(f"收到原始文案: {raw_text}")
+
+    # 1. 构建 Prompt，强制 Llama 3 扮演专业房产中介并返回 JSON
+    prompt = f"""
+    You are a professional real estate copywriter in Malaysia. 
+    Extract and rewrite the following raw Telegram message into a highly attractive Mudah.my property listing.
+
+    Raw Message:
+    {raw_text}
+
+    Requirements:
+    1. Title must be catchy (e.g., include tags like 🔥, 🚆 Near MRT, etc.)
+    2. Price must be a formatted string (e.g., 'RM 2500')
+    3. Description should be professional, well-structured, and persuasive.
+
+    You MUST output ONLY a valid JSON object in the following format, with no markdown formatting or other text:
+    {{
+        "title": "...",
+        "price": "...",
+        "description": "..."
+    }}
+    """
+
+    try:
+        print("正在呼叫本地 Llama 3 进行智能提取和文案重写...")
+        response = llm.complete(prompt)
+        result_text = str(response).strip()
+
+        # 尝试清理可能出现的 Markdown 标记 (大模型有时候很顽皮，喜欢加 ```json)
+        if result_text.startswith("```json"):
+            result_text = result_text[7:-3]
+
+        # 解析 JSON
+        property_data = json.loads(result_text)
+        print("✅ 数据清洗成功！")
+        print(json.dumps(property_data, indent=2, ensure_ascii=False))
+
+        # 2. 拿到结构化数据后，触发 Playwright 进行自动化填表
+        # 注意：这里假设 automate_mudah_post 是同步的，如果是异步的需要用 asyncio.run()
+        print("正在唤醒 Playwright 数字机器人...")
+        # 实际运行中取消下面的注释即可联动
+        # automate_mudah_post(
+        #     title=property_data["title"],
+        #     description=property_data["description"],
+        #     price=property_data["price"],
+        #     image_paths=image_paths
+        # )
+
+        return {"status": "success", "data": property_data}
+
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON 解析失败，LLM 输出的格式不对: {str(response)}")
+        return {"status": "error", "message": "Failed to parse LLM output"}
+    except Exception as e:
+        print(f"❌ 处理过程中发生严重错误: {e}")
+        return {"status": "error", "message": str(e)}
