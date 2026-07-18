@@ -7,3 +7,4 @@ uvicorn
 llama-index-core
 llama-index-llms-ollama
 llama-index-embeddings-huggingface
+playwright-stealth==1.0.6

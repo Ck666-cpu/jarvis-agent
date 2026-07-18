@@ -1,6 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
+from playwright_stealth import stealth_async
 
 
 async def automate_mudah_post(title: str, description: str, price: str, image_paths: list):
