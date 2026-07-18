@@ -3,7 +3,7 @@ import asyncio
 import ollama
 from celery import Celery
 from playwright.sync_api import sync_playwright
-from playwright_stealth import Stealth
+from playwright_stealth import stealth_sync
 import json
 from llama_index.llms.ollama import Ollama
 from mudah_automator import automate_mudah_post
@@ -42,10 +42,8 @@ def scrape_website(url: str):
         )
 
         # 【伪装核心 3】：在页面加载任何脚本之前，注入 stealth 插件修补底层指纹
-        stealth = Stealth()
-        stealth.apply_stealth_sync(context)
-
         page = context.new_page()
+        stealth_sync(page)
 
         try:
             print("[1/3] 正在潜行抓取网页 DOM...")
