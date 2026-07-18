@@ -1,4 +1,5 @@
 import os
+import asyncio
 import ollama
 from celery import Celery
 from playwright.sync_api import sync_playwright
@@ -136,21 +137,48 @@ def process_telegram_message(raw_text: str, image_paths: list):
         print(json.dumps(property_data, indent=2, ensure_ascii=False))
 
         # 2. 拿到结构化数据后，触发 Playwright 进行自动化填表
-        # 注意：这里假设 automate_mudah_post 是同步的，如果是异步的需要用 asyncio.run()
         print("正在唤醒 Playwright 数字机器人...")
-        # 实际运行中取消下面的注释即可联动
-        # automate_mudah_post(
-        #     title=property_data["title"],
-        #     description=property_data["description"],
-        #     price=property_data["price"],
-        #     image_paths=image_paths
-        # )
+        posting_result = asyncio.run(automate_mudah_post(
+            title=property_data["title"],
+            description=property_data["description"],
+            price=property_data["price"],
+            image_paths=image_paths,
+            headless=os.getenv("HEADLESS", "True").lower() == "true",
+        ))
 
-        return {"status": "success", "data": property_data}
+        if posting_result.get("status") == "success":
+            print(f"✅ Mudah.my listing posted! URL: {posting_result.get('url', 'N/A')}")
+        else:
+            print(f"⚠️  Posting issue: {posting_result.get('message', 'unknown')}")
+
+        return {"status": "success", "data": property_data, "posting": posting_result}
 
     except json.JSONDecodeError as e:
         print(f"❌ JSON 解析失败，LLM 输出的格式不对: {str(response)}")
         return {"status": "error", "message": "Failed to parse LLM output"}
     except Exception as e:
         print(f"❌ 处理过程中发生严重错误: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.task(name="tasks.post_to_mudah")
+def post_to_mudah(title: str, description: str, price: str, image_paths: list = None):
+    """
+    Standalone task: directly post a listing to Mudah.my without LLM rewriting.
+    Useful when the caller already has structured data.
+    """
+    print(f"========== Mudah Direct Post ==========")
+    print(f"Title: {title} | Price: {price}")
+
+    try:
+        result = asyncio.run(automate_mudah_post(
+            title=title,
+            description=description,
+            price=price,
+            image_paths=image_paths or [],
+            headless=os.getenv("HEADLESS", "True").lower() == "true",
+        ))
+        return result
+    except Exception as e:
+        print(f"❌ Direct post failed: {e}")
         return {"status": "error", "message": str(e)}

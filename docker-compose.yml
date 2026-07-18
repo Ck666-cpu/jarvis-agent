@@ -41,14 +41,21 @@ services:
       # 同样使用服务名 'redis' 连接
       - REDIS_URL=redis://redis:6379/0
       - HEADLESS=True
+      # Mudah.my credentials (set these in a .env file or export them)
+      - MUDAH_EMAIL=${MUDAH_EMAIL:-}
+      - MUDAH_PASSWORD=${MUDAH_PASSWORD:-}
+      - MUDAH_COOKIES_FILE=/tmp/mudah_cookies.json
     depends_on:
       - redis
+    volumes:
+      - mudah_cookies:/tmp
     networks:
       - jarvis-network
     restart: always
 
 volumes:
   redis_data:
+  mudah_cookies:
 
 networks:
   jarvis-network:
