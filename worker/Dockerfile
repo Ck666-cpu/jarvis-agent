@@ -10,6 +10,8 @@ RUN playwright install --with-deps chromium
 
 # 复制所有源代码
 COPY mudah_automator.py .
+COPY main.py .
+COPY tasks.py .
 
 # 启动命令 (假设你的主程序叫 main.py)
 CMD ["python", "main.py"]
