@@ -19,9 +19,11 @@ jobs:
         run: |
           echo "开始构建并更新 Jarvis 容器..."
           
-          # --build 强制重新构建镜像以应用最新代码
+          # --no-cache 强制从零构建，避免 Docker 缓存导致旧代码被复用
+          # --build 确保镜像被重新构建
           # -d 后台静默启动，平滑替换旧容器
-          docker-compose up -d --build
+          docker-compose build --no-cache python-worker
+          docker-compose up -d
           
           # 清理无用的悬空镜像，防止把宿主机磁盘撑爆
           docker image prune -f
